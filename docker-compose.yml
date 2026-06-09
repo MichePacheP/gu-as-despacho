@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  guias-despacho:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: guias-despacho-app
+    ports:
+      - "8080:8080"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-guias-despacho-bucket}
+      - EFS_MOUNT_PATH=/mnt/efs/guias
+    volumes:
+      - efs-local:/mnt/efs/guias
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  efs-local:
+    driver: local
