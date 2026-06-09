@@ -12,13 +12,9 @@ env:
   DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/guias-despacho
 
 jobs:
-  # =====================================================
-  # JOB 1: Build y Test
-  # =====================================================
   build-and-test:
     name: Build y Test con Maven
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout código fuente
         uses: actions/checkout@v4
@@ -33,15 +29,11 @@ jobs:
       - name: Compilar y ejecutar tests
         run: mvn clean verify -B
 
-  # =====================================================
-  # JOB 2: Docker Build y Push a Docker Hub
-  # =====================================================
   docker-build-push:
     name: Build y Push imagen Docker
     runs-on: ubuntu-latest
     needs: build-and-test
     if: github.ref == 'refs/heads/main'
-
     steps:
       - name: Checkout código fuente
         uses: actions/checkout@v4
@@ -67,15 +59,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # =====================================================
-  # JOB 3: Deploy en EC2 vía SSH
-  # =====================================================
   deploy-ec2:
     name: Deploy en EC2
     runs-on: ubuntu-latest
     needs: docker-build-push
     if: github.ref == 'refs/heads/main'
-
     steps:
       - name: Deploy vía SSH en EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -101,6 +89,7 @@ jobs:
               -p 8080:8080 \
               -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
               -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+              -e AWS_SESSION_TOKEN="${{ secrets.AWS_SESSION_TOKEN }}" \
               -e AWS_REGION="${{ secrets.AWS_REGION }}" \
               -e S3_BUCKET_NAME="${{ secrets.S3_BUCKET_NAME }}" \
               -e EFS_MOUNT_PATH=/mnt/efs/guias \
